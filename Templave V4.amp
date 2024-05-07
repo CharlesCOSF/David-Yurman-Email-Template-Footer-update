@@ -1,0 +1,834 @@
+<!-- %%[ /* TEMPLATE_Global_v2 | 20220512 | PB | Changed footer design */ ]%% -->
+
+<!-- Top AMPscript slot -->
+<div data-type="slot" data-key="slot_01" data-label="AmpScript"></div>
+
+<!-- %%[ 
+
+/* Set @emailType to marketing if empty */
+IF Empty(@emailType) THEN
+   SET @emailType = "marketing"
+ENDIF
+
+/* Check for language override */
+VAR @language, @country
+
+IF NOT Empty(@languageOverride) THEN
+    SET @language = @languageOverride
+ELSE
+   /* Set language for Transactional emails */
+   SET @language = AttributeValue('Language')
+   SET @country = AttributeValue('Country')   
+
+   /* Set language for MC Connect Emails */
+   IF NOT Empty(@subCountry) THEN
+      SET @country = @subCountry
+      SET @language = @subLanguage
+      IF Empty(@sublanguage) AND @country == "CA" THEN
+         SET @language = "English"
+      ENDIF 
+   ENDIF
+   
+   /* Set Language for Journey emails. Note that Double Opt In uses different fields so it uses the Sub method for MC Connect Emails above */
+   IF @emailType == "journey" AND @emailVersion != "DoubleOpt" THEN 
+      SET @language = AttributeValue('Account:PersonContact:Language__c')
+      SET @country = AttributeValue('Account:PersonContact:PreferredCountry__c')
+
+      IF EMPTY(@language) THEN
+         SET @language = AttributeValue('Contact:Language__c')
+      ENDIF
+      IF EMPTY(@country) THEN
+         SET @country = AttributeValue('Contact:PreferredCountry__c')
+      ENDIF
+   ENDIF
+
+   /* Default to en-CA if country is Canada, and en-US if no language or country value for all others */
+   IF Empty(@language) OR Empty(@country) THEN  
+      IF @country == "CA" THEN
+         SET @language = "en"
+      ELSE
+         Set @country = "US"
+         SET @language = "en"
+      ENDIF
+   ENDIF
+
+   SET @isEU = "false" /* Default to false. This value is used to determine if the subscriber is in the EU */
+   SET @hashrows = LookupRows("ENT.EU_Countries", "Countries", @country)
+   IF RowCount(@hashrows) > 0 THEN
+      SET @isEU = "true" /* Subscriber is in the EU */
+   ENDIF
+
+
+
+   /* For countries and languages that can't be derived from the first two letters, create values using IndexOf() */
+   IF @country == 'England' OR @country == 'Great Britain' OR @country == 'United Kingdom' OR @country == "UK" THEN
+      SET @country = "GB"
+   ELSE
+      SET @country = Uppercase(Substring(@Country,1,2))
+   ENDIF
+   
+   IF IndexOf(@language, 'British') > 0 THEN
+      SET @language = 'en'
+   ELSE
+      SET @language = Lowercase(Substring(@language,1,2))
+   ENDIF
+   
+
+
+   /* If the subscriber's preferred country is not one of the current emailable countries, default to en-US */
+   IF @country != "US" AND @country != "CA" AND @country != "GB" AND @country !="FR" AND @language !="en-EU" OR (@country =="FR" AND @language == "en") THEN
+      SET @language = "en"      
+      SET @country = "US"
+      IF @isEU == "true" then
+         SET @language = "en"      
+         SET @country = "EU"
+      ENDIF
+   ENDIF
+
+   /* Concatenate languaage and country to create ISO language code. This code drives all language-specific content in the email */
+   SET @language = Concat(@language, '-', @country)
+ENDIF
+
+/* Set two-letter Lang value in the html tag */
+SET @lang = Lowercase(Substring(@Language, 1, 2))
+
+/* Set the global header footer content DE */
+SET @headerFooterDE = "CONTENT_Global_Header_Footer"
+IF memberid == "534001459" THEN
+    SET @headerFooterDE = Concat(@headerFooterDE, "_DEV")
+ENDIF
+
+IF @language == "en-FR" THEN
+SET @language = "en-EU"
+ENDIF
+
+/* Set the header and footer content variables */
+SET @row = Row(LookupRows(@headerFooterDE, 'language', @language), 1)
+                            
+VAR @copyrightText, @companyAddressText, @womenText, @womenLinkURL, @womenAlias, @menText, @menLinkURL, @menAlias, @weddingText, @weddingLinkURL, @weddingAlias, @giftsText, @giftsLinkURL, @giftsAlias, @storeLocatorText, @storeLocatorLinkURL, @storeLocatorAlias, @myAccountText, @myAccountLinkURL, @myAccountAlias, @privacyPolicyText, @privacyPolicyLinkURL, @privacyPolicyAlias, @unsubscribeText, @unsubscribelinkURL, @unsubscribeAlias, @termsAndConditionsText, @termsAndConditionsLinkURL, @termsAndConditionsAlias, @geneeralDisclaimerText1, @generalDisclaimerText2, @generalDisclaimerText2LinkURL, @generalDisclaimerText2Alias, @generalDisclaimerText3, @generalDisclaimerText4, @generalDisclaimerText4LinkURL, @generalDisclaimerText4Alias, @instagramURL, @instagramAlias, @facebookURL, @facebookAlias, @pinterestURL, @pinterestAlias, @twitterURL, @twitterAlias, @youtubeURL, @youtubeAlias, @customerServiceEmail, @customerServicePhone, @freeShippingMessage, @freeShippingAlternateMessage, @freeShippingLinkText, @freeShippingLinkURL, @freeShippingAlias
+
+SET @headerLogoLinkURL = Field(@row, 'headerLogoLinkURL')
+SET @headerLogoAlias = Field(@row, 'headerLogoAlias')
+SET @footerLogoLinkURL = Field(@row, 'footerLogoLinkURL')
+SET @footerLogoAlias = Field(@row, 'footerLogoAlias')
+SET @copyrightText = Field(@row, 'copyrightText')
+SET @companyAddressText = Field(@row, 'companyAddressText')
+
+SET @womenText = Field(@row, 'womenText')
+SET @womenLinkURL = Field(@row, 'womenlinkURL')
+SET @womenAlias = Field(@row, 'womenAlias')
+SET @menText = Field(@row, 'menText')
+SET @menLinkURL = Field(@row, 'menlinkURL')
+SET @menAlias = Field(@row, 'menAlias')
+SET @weddingText = Field(@row, 'weddingText')
+SET @weddingLinkURL = Field(@row, 'weddinglinkURL')
+SET @weddingAlias = Field(@row, 'weddingAlias')
+SET @giftsText = Field(@row, 'giftsText')
+SET @giftsLinkURL = Field(@row, 'giftslinkURL')
+SET @giftsAlias = Field(@row, 'giftsAlias')
+SET @storeLocatorText = Field(@row, 'storeLocatorText')
+SET @storeLocatorLinkURL = Field(@row, 'storeLocatorlinkURL')
+SET @storeLocatorAlias = Field(@row, 'storeLocatorAlias')
+
+SET @myAccountText = Field(@row, 'myAccountText')
+SET @myAccountLinkURL = Field(@row, 'myAccountLinkURL')
+SET @myAccountAlias = Field(@row, 'myAccountAlias')
+SET @privacyPolicyText = Field(@row, 'privacyPolicyText')
+SET @privacyPolicyLinkURL = Field(@row, 'privacyPolicyLinkURL')
+SET @privacyPolicyAlias = Field(@row, 'privacyPolicyAlias')
+SET @unsubscribeText = Field(@row, 'unsubscribeText')
+SET @unsubscribelinkURL = Field(@row, 'unsubscribelinkURL')
+SET @unsubscribeAlias = Field(@row, 'unsubscribeAlias')
+SET @termsAndConditionsText = Field(@row, 'termsAndConditionsText')
+SET @termsAndConditionsLinkURL = Field(@row, 'termsAndConditionsLinkURL')
+SET @termsAndConditionsAlias = Field(@row, 'termsAndConditionsAlias')
+
+SET @generalDisclaimerText1 = Field(@row, 'generalDisclaimerText1')
+SET @generalDisclaimerText2 = Field(@row, 'generalDisclaimerText2')
+SET @generalDisclaimerText2LinkURL = Field(@row, 'generalDisclaimerText2LinkURL')
+SET @generalDisclaimerText2Alias = Field(@row, 'generalDisclaimerText2Alias')
+SET @generalDisclaimerText3 = Field(@row, 'generalDisclaimerText3')
+SET @generalDisclaimerText4 = Field(@row, 'generalDisclaimerText4')
+SET @generalDisclaimerText4LinkURL = Field(@row, 'generalDisclaimerText4LinkURL')
+SET @generalDisclaimerText4Alias = Field(@row, 'generalDisclaimerText4Alias')
+
+SET @instagramURL = Field(@row, 'instagramURL')
+SET @instagramAlias = Field(@row, 'instagramAlias')
+SET @facebookURL = Field(@row, 'facebookURL')
+SET @facebookAlias = Field(@row, 'facebookAlias')
+SET @pinterestURL = Field(@row, 'pinterestURL')
+SET @pinterestAlias = Field(@row, 'pinterestAlias')
+SET @twitterURL = Field(@row, 'twitterURL')
+SET @twitterAlias = Field(@row, 'twitterAlias')
+SET @youtubeURL = Field(@row, 'youtubeURL')
+SET @youtubeAlias = Field(@row, 'youtubeAlias')
+
+SET @customerServiceEmail = Field(@row, 'customerServiceEmail')
+SET @customerServicePhone = Field(@row, 'customerServicePhone')
+SET @customerServiceWeb = Field(@row, 'customerServiceWeb')
+
+SET @freeShippingMessage = Field(@row, 'freeShippingMessage')
+SET @freeShippingAlternateMessage = Field(@row, 'freeShippingAlternateMessage')
+SET @freeShippingLinkText = Field(@row, 'freeShippingLinkText')
+SET @freeShippingLinkURL = Field(@row, 'freeShippingLinkURL')
+SET @freeShippingAlias = Field(@row, 'freeShippingAlias')
+
+/* Color Controls */
+IF @bodyBackgroundColor == "black" THEN
+    SET @bodyBackgroundColor = "#000000"
+   /* Use white logos if body background color is black; if not using a custom text color set text color to white  */
+   IF Empty(@textColor) THEN
+      SET @textColor = "#FFFFFF"
+   ELSE    
+      SET @darkModeText = @textColor
+   ENDIF
+
+   /* White logos */
+   SET @headerLogoImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/5ac6c997-22e5-47e4-864e-9a9b8041afcf.png"
+   SET @footerLogoImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/59ea5b61-f2ba-418a-99f2-a3e7c8475544.png"
+
+   SET @footerInstagramImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/cba99cbb-1931-4208-860d-bcb302633568.png"
+   SET @footerFacebookImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/f367ff16-92d1-4095-a4b6-7c986f41d37d.png"
+   SET @footerPinterestImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/5da1bf83-2b17-4fee-a323-a9ae2f8538bc.png"
+   SET @footerTwitterImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/b9baaa85-2f95-4ce4-8ee6-7523de7360f2.png"
+   SET @footerYouTubeImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/d1aab80f-0ba4-4808-9e28-9ecab6c239ff.png"
+   
+ELSEIF NOT Empty(@bodyBackgroundColor) THEN
+   /* Set background color, text color, and logo color. Set text color to black if not using a custom color. */
+   IF Empty(@textColor) THEN
+      SET @textColor = "#000000"
+   ELSE    
+      SET @darkModeText = @textColor
+   ENDIF
+
+   IF @logoColor == "white" THEN
+      /* White logos */
+      SET @headerLogoImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/5ac6c997-22e5-47e4-864e-9a9b8041afcf.png"
+      SET @footerLogoImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/59ea5b61-f2ba-418a-99f2-a3e7c8475544.png"
+
+      SET @footerInstagramImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/cba99cbb-1931-4208-860d-bcb302633568.png"
+      SET @footerFacebookImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/f367ff16-92d1-4095-a4b6-7c986f41d37d.png"
+      SET @footerPinterestImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/5da1bf83-2b17-4fee-a323-a9ae2f8538bc.png"
+      SET @footerTwitterImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/b9baaa85-2f95-4ce4-8ee6-7523de7360f2.png"
+      SET @footerYouTubeImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/d1aab80f-0ba4-4808-9e28-9ecab6c239ff.png"
+
+   ELSE
+      /* Black logos */
+      SET @headerLogoImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/b546f561-bd2e-4ef6-af31-c80884b43b4e.png"
+      SET @footerLogoImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/6f42d08d-68e3-4c43-a731-3f787634963f.png"
+      
+      SET @footerInstagramImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/cba99cbb-1931-4208-860d-bcb302633568.png"
+      SET @footerFacebookImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/f367ff16-92d1-4095-a4b6-7c986f41d37d.png"
+      SET @footerPinterestImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/5da1bf83-2b17-4fee-a323-a9ae2f8538bc.png"
+      SET @footerTwitterImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/b9baaa85-2f95-4ce4-8ee6-7523de7360f2.png"
+      SET @footerYouTubeImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/d1aab80f-0ba4-4808-9e28-9ecab6c239ff.png"
+   ENDIF
+ELSE
+   /* Default black text on white background */
+   /* if not using a custom text color set text color to black  */
+   IF Empty(@textColor) THEN
+      SET @textColor = "#000000"
+   ELSE    
+      SET @darkModeText = @textColor
+   ENDIF
+
+   SET @bodyBackgroundColor = "#FFFFFF"
+   /* Header logo image URLs are set in the HTML further down, just above the header */
+   SET @getHeaderLogoURL = "Y"
+
+   SET @footerInstagramImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/cba99cbb-1931-4208-860d-bcb302633568.png"
+   SET @footerFacebookImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/f367ff16-92d1-4095-a4b6-7c986f41d37d.png"
+   SET @footerPinterestImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/5da1bf83-2b17-4fee-a323-a9ae2f8538bc.png"
+   SET @footerTwitterImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/b9baaa85-2f95-4ce4-8ee6-7523de7360f2.png"
+   SET @footerYouTubeImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/d1aab80f-0ba4-4808-9e28-9ecab6c239ff.png"
+   SET @footerLogoImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/0ecf5441-152c-4d02-8dc2-3ed6b7704a86.png"
+ENDIF
+
+IF @disableDarkMode != "Y" THEN
+   /* Set the dark mode text color. White is default */
+   IF Empty(@darkmodeText) THEN
+      SET @darkmodeText = "#FFFFFF"
+   ENDIF
+ENDIF
+]%% -->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" 
+ xmlns:v="urn:schemas-microsoft-com:vml"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ lang="%%=v(@lang)=%%" >
+<style type="text/css">
+.darkmodeText1 {
+color: %%=v(@darkModeText)=%% !important;
+}
+</style>
+<head>
+<!--[if gte mso 9]><xml>
+ <o:OfficeDocumentSettings>
+  <o:AllowPNG/>
+  <o:PixelsPerInch>96</o:PixelsPerInch>
+ </o:OfficeDocumentSettings>
+</xml><![endif]-->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+%%[ IF @disableDarkMode != "Y" THEN ]%%
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+%%[ ENDIF ]%%
+<title>David Yurman</title>
+<link rel="stylesheet" href="https://use.typekit.net/yao1svl.css">  
+<style type="text/css">
+#MessageViewBody, #MessageWebViewDiv {
+   width: 100% !important;
+}
+%%[ IF @disableDarkMode != "Y" THEN ]%%    :root {
+color-scheme: light dark;
+supported-color-schemes: light dark;
+}
+%%[ ENDIF ]%% body {
+-webkit-text-size-adjust: 100%;
+-ms-text-size-adjust: 100%;
+margin: 0 !important;
+padding: 0 !important;
+}
+div[style*="margin: 16px 0"] {
+   margin: 0 !important;
+   font-size: 100% !important;
+}
+p {
+   margin: 0 0;
+}
+H1 {
+   margin: 0 0;
+}
+H2 {
+   margin: 0 0;
+}
+table td {
+   border-collapse: collapse;
+}
+img {
+   outline: none;
+}
+a img {
+   border: none;
+}
+.nolink a {
+   color: #000000!important;
+   text-decoration: none!important;
+}
+@-ms-viewport {
+width: device-width;
+}
+a[x-apple-data-detectors] {
+   color: inherit !important;
+   text-decoration: none !important;
+   font-size: inherit !important;
+   font-family: inherit !important;
+   font-weight: inherit !important;
+   line-height: inherit !important;
+}
+#MessageViewBody a {
+   color: inherit !important;
+   text-decoration: none !important;
+   font-size: inherit !important;
+   font-family: inherit !important;
+   font-weight: inherit !important;
+   line-height: inherit !important;
+}
+.preheader {
+   display: none !important;
+}
+  .msg-5191920733299179848 u+.m_-5191920733299179848body .m_-5191920733299179848ie-frm-btn{
+  display: block!important;
+  }
+</style>
+%%[ IF @disableDarkMode != "Y" THEN ]%%
+<!--[if !mso]><!-->
+
+<style>
+@media (prefers-color-scheme: dark ) {
+/* iOS */
+.darkModeWhiteBackground {
+   background-color: #FFFFFe !important;
+}
+.darkModeWhiteBorder {
+   border: #FFFFFe solid 2px !important;
+}
+.darkModeBlackBackground {
+   background-color: #000000 !important;
+}
+/* Custom Dark Mode Background Color */
+.darkModeBackground {
+background-color: %%=v(@bodyBackgroundColor)=%% !important;
+}
+/* Custom Dark Mode Font Colors */
+h1, h2, p, span, a, b {
+color: %%=v(@darkModeText)=%% !important;
+}
+.darkmodeText {
+color: %%=v(@darkModeText)=%% !important;
+}
+.darkModeBlackText {
+   color: #000000 !important;
+}
+}
+</style>
+<!--<![endif]-->
+
+<style>
+/* Outlook */
+[data-ogsc] .darkModeWhiteBackground {
+   background-color: #FFFFFe !important;
+}
+[data-ogsc] .darkModeBlackBackground {
+   background-color: #000000 !important;
+}
+[data-ogsc] .darkModeWhiteBorder {
+   border: #FFFFFe solid 2px !important;
+}
+/* Custom Dark Mode Background Color */
+[data-ogsc] .darkModeBackground {
+background-color: %%=v(@bodyBackgroundColor)=%% !important;
+}
+/* Custom Dark Mode Font Colors */
+[data-ogsc] .darkmodeText {
+color: %%=v(@darkModeText)=%% !important;
+}
+[data-ogsc] .darkmodeBlackText {
+   color: #000000 !important;
+}
+</style>
+%%[ ENDIF ]%%
+<style type="text/css">
+@media screen {
+/* Adding SFMC hosted custom font*/
+  @font-face {
+    font-family: Antiga;
+   src: url(data:font/opentype;charset=utf-8;base64,%%=ContentBlockbyId("70636")=%%) format('opentype');
+    font-weight: 400;
+    font-style: normal;
+  }
+
+@font-face {
+   font-family: 'proxima-nova';
+   font-style: normal;
+   font-weight: 100;
+   src: local('proxima-nova'), url('https://use.typekit.net/af/154cda/00000000000000007735e601/30/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n1&v=3') format('woff');
+}
+@font-face {
+   font-family: 'proxima-nova';
+   font-style: normal;
+   font-weight: 600;
+   src: local('proxima-nova'), url('https://use.typekit.net/af/78aca8/00000000000000007735e60d/30/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n6&v=3') format('woff');
+}
+@font-face {
+   font-family: 'proxima-nova';
+   font-style: normal;
+   font-weight: 400;
+   src: local('proxima-nova'), url('https://use.typekit.net/af/efe4a5/00000000000000007735e609/30/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n4&v=3') format('woff');
+}
+@font-face {
+   font-family: 'proxima-nova';
+   font-style: normal;
+   font-weight: 300;
+   src: local('proxima-nova'), url('https://use.typekit.net/af/1be3c2/00000000000000007735e606/30/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n3&v=3') format('woff');
+}
+@font-face {
+   font-family: 'didot';
+   font-style: italic;
+   font-weight: 400;
+   src: local('didot') url('https://use.typekit.net/af/cf4868/00000000000000007735bbdc/30/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=i4&v=3') format('woff');
+}
+@font-face {
+   font-family: 'didot';
+   font-style: normal;
+   font-weight: 400;
+   src: local('didot') url('https://use.typekit.net/af/b00c42/00000000000000007735bbdf/30/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n4&v=3') format('woff');
+}
+@font-face {
+   font-family: "minion";
+   font-display: auto;
+   font-style: normal;
+   font-weight: 400;
+   src: local('minion'), url("https://use.typekit.net/af/1286c7/0000000000000000000151d6/27/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n4&v=3") format("woff");
+}
+@font-face {
+   font-family: "minion";
+   font-display: auto;
+   font-style: normal;
+   font-weight: 600;
+   src: local('minion'), url("https://use.typekit.net/af/acb0f1/0000000000000000000151d7/27/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n6&v=3") format("woff");
+}
+@font-face {
+   font-family: "trade-gothic-next-compressed";
+   font-display: auto;
+   font-style: normal;
+   font-weight: 400;
+   src: local('trade-gothic-next-compressed'), url("https://use.typekit.net/af/c7f096/00000000000000007735ba75/30/d?primer=7fa3915bdafdf03041871920a205bef951d72bf64dd4c4460fb992e3ecc3a862&fvd=n4&v=3") format("woff");
+}
+@font-face {
+  font-family: 'league-gothic';
+  font-style: normal;
+  font-weight: 400;
+  src: local('League-Gothic'), url("https://fonts.gstatic.com/s/leaguegothic/v5/qFdR35CBi4tvBz81xy7WG7ep-BQAY7Krj7feObpH_9ahg9U.woff2") format('woff2');
+}
+</style>
+
+<!--[if mso]>
+<style type="text/css">
+.fallback-font-proxima-nova {
+font-family: 'Verdana', 'sans-serif';
+}
+.fallback-font-didot {
+font-family: 'times new roman', 'serif';
+}
+.fallback-font-minion {
+font-family: 'Georgia', 'serif';
+}
+.fallback-font-trade-gothic-next-compressed {
+font-family: 'Impact', 'sans-serif';
+}
+.fallback-font-league-gothic {
+font-family: 'Impact', 'sans-serif';
+}
+</style>
+<![endif]-->
+
+</head><body align="center" style="padding:0; margin:0 auto !important; text-align:center;">
+<custom name="opencounter" type="tracking">
+
+<!-- BEGIN Subject Line and Preheader --> 
+<!-- %%[  
+IF Empty(@subjectLine) THEN 
+   SET @subjectLineContentDE = @contentDE 
+   IF NOT Empty(@subjectLineContentDE) THEN 
+      /* Use the content DE if this is a content matrix email */ 
+      /* If the email is in the Test - David Yurman BU add _DEV to the end of the module name and DE names. Note that we're setting the variable name different from the name used in the AMPscript module. This is to prevent double-appending the _DEV suffix to DE and module names in the test BU . */ 
+      IF memberid == "534001459" THEN 
+         SET @subjectLineContentDE = Concat(@subjectLineContentDE, "_DEV") 
+      ENDIF 
+      
+      /* Set preheader */ 
+      SET @subjectLine = TreatAsContent(Field(Row(LookupRows(@subjectLineContentDE, 'cbType', 'subjectLine', 'language', @language), 1), 'text'))
+      IF Empty(@preheader) THEN 
+         SET @preheader = TreatAsContent(Field(Row(LookupRows(@subjectLineContentDE, 'cbType', 'preheader', 'language', @language), 1), 'text'))
+      ENDIF 
+   ENDIF  
+ENDIF 
+]%% --> 
+<!-- END Subject Line and Preheader --> 
+  
+
+<!-- BEGIN Centering Table -->
+<table role="presentation" border="0" width="100%" align="center" cellpadding="0" cellspacing="0">
+   <tr>
+      <td align="center"> 
+         <!-- BEGIN Main Table -->
+         <table role="presentation" width="640" border="0" align="center" cellpadding="0" cellspacing="0" bgcolor="%%=v(@bodyBackgroundColor)=%%">
+            <!-- BEGIN Inbox Preheader -->
+            <div style="display: none; max-height: 0px; overflow: hidden;">%%=v(@preheader)=%%
+            &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;
+            &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;
+            &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;
+            &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;
+            &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;
+            &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;&#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;
+            </div>
+            <!-- END Inbox Preheader --> 
+            
+            <!-- BEGIN visible Preheader/Free Shipping banner --> 
+            %%[
+            VAR @fsBannerCustomerKey
+            IF @showFreeShipBanner == "Y" THEN
+            /* Add DEV suffix if in Test BU */
+            IF memberid == "534001459" THEN
+            SET @fsBannerCustomerKey = "BANNER_Free_Shipping_DEV"
+            ELSE
+            SET @fsBannerCustomerKey = "BANNER_Free_Shipping"               
+            ENDIF
+            ]%%
+            %%=ContentBlockByKey(@fsBannerCustomerKey)=%%
+            %%[
+            ELSEIF @emailType == "marketing" OR Empty(@emailType) OR @emailType == "trigger" THEN 
+            IF @showPreheader == "Y" THEN
+            ]%%
+            <tr>
+               <td align="center">
+                  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                     <tr>
+                        <td align="left" bgcolor="#F3F3F3" class="darkmodeBlackText fallback-font-proxima-nova" style="font-family: 'proxima-nova','Verdana', 'sans-serif'; color:#000000; padding:13px; font-size: 18px; line-height: 25px;">%%=TreatAsContent(@preheader)=%% <a href="%%=RedirectTo(@preheaderLinkURL)=%%" target="_blank" alias="Preheader" style="color: #000000;text-decoration: underline;" class="darkmodeBlackText">%%=v(@preheaderLinkText)=%%</a> </td>
+                     </tr>
+                  </table>
+               </td>
+            </tr>
+            %%[ 
+            ENDIF 
+            ENDIF 
+            ]%% 
+            <!-- END visible Preheader/Free Shipping banner --> 
+            
+            <!-- BEGIN Header  --> 
+            <!-- %%[ 
+            IF @hideHeader != "Y" THEN
+                IF @getHeaderLogoURL == "Y" THEN
+                     IF @emailType == "Transactional" AND @hasHero != "Y" THEN
+                        SET @headerLogoImageURL = "https://image.e.davidyurman.com/lib/fe3011737164047c711179/m/1/6f182f2d-78b4-4dc0-b1c0-1daf7bcef1a1.png"
+                        SET @logoAlignment = "center"
+                        SET @headerPadding = "0px 0px 40px 0px"
+                        SET @headerLogoWidth = "640"
+                    ELSE
+                        SET @headerLogoImageURL = "https://image.e.davidyurman.com/lib/fe2d11727364047f7c1c72/m/2/c4df0be1-f76d-4435-8d8d-b37afaa417ea.jpg"
+                        SET @logoAlignment = "center"
+                        SET @headerPadding = "0 0 0 0"
+                        SET @headerLogoWidth = "640"
+                    ENDIF 
+                ELSE
+                    IF @hasHero == "Y" OR @emailType == "Journey" OR @hidePreheader == "Y" THEN
+                        SET @headerPadding = "50px 70px 50px 70px"
+                        SET @logoAlignment = "center"
+                        SET @headerLogoWidth = "350"
+                    ELSEIF @emailType == "Transactional" THEN
+                        SET @headerPadding = "100px 70px 100px 70px"
+                        SET @logoAlignment = "left"
+                        SET @headerLogoWidth = "350"
+                    ELSE
+                        SET @headerPadding = "70px 70px 40px 70px"
+                        SET @logoAlignment = "center"
+                        SET @headerLogoWidth = "350"                        
+                    ENDIF 
+                ENDIF
+            ]%% --> 
+            <!-- BEGIN Logo -->
+            <tr>
+               <td align="center" class="pad-sides-mobile darkModeBackground" style="padding: %%=v(@headerPadding)=%%;">
+                  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                     <tr>
+                        <td align="%%=v(@logoAlignment)=%%">
+                           <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="%%=v(@logoAlignment)=%%">
+                              <tr>
+                                 <td align="center" class="darkmodeText fallback-font-didot" ><a href="%%=RedirectTo(@headerLogoLinkURL)=%%" target="_blank" alias="%%=v(@headerLogoAlias)=%%" style="text-decoration: none; color:%%=v(@textColor)=%%;"><img src="%%=v(@headerLogoImageURL)=%%" alt="DAVID YURMAN" width="%%=v(@headerLogoWidth)=%%" style="display:block; font-family: 'didot', 'times new roman', 'serif'; font-size:20px; font-weight:bold; color:%%=v(@textColor)=%%;" border="0" class="fallback-font-didot darkmodeText" /> </a> </td>
+                              </tr>
+                           </table>
+                        </td>
+                     </tr>
+                  </table>
+               </td>
+            </tr>
+            <!-- END Logo --> 
+            %%[ ENDIF ]%% 
+            <!-- END header --> 
+            
+            <!-- BEGIN Content Slots -->
+            <tr >
+               <td align="center">
+                  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                     <tr>
+                        <td>
+                           <div data-type="slot" data-key="slot_02" data-label="Top_Banner_Slot"></div>
+                        </td>
+                     </tr>
+                  </table>
+               </td>
+            </tr>
+            <tr >
+               <td align="center" style="padding: 0" class="darkModeBackground">
+                  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                     <tr>
+                        <td style="padding: 0;">
+                           <div data-type="slot" data-key="slot_04" data-label="Main_Content_Slot"></div>
+                        </td>
+                     </tr>
+                  </table>
+               </td>
+            </tr>
+            <tr >
+               <td align="center">
+                  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                     <tr>
+                        <td>
+                           <div data-type="slot" data-key="slot_05" data-label="Bottom_Banner_Slot"></div>
+                        </td>
+                     </tr>
+                  </table>
+               </td>
+            </tr>
+            <!-- END Content Slots --> 
+            
+            <!-- BEGIN Footer -->
+            <tr >
+               <td align="center" style="padding: 0;">
+                  <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+                     <tr>
+                        <td align="left" style="padding: 50px 0 0 0; border-top: 1px solid #D4D4D4; ">&nbsp;</td>
+                     </tr>
+                     
+                     <!-- BEGIN Footer Category Links --> 
+                     <!-- %%[ 
+                     IF (@hideFooterCategoryLinks != "Y" AND (@emailType == "journey" OR @emailType == "marketing" OR @emailType == "transactional" OR @emailType == "trigger" OR Empty(@emailType))) OR (@hideFooterCategoryLinks == "N" AND @emailType == "Transactional") THEN 
+                     /* Supress footer logo below address */
+                     SET @footerLogoDisplayed = "Y"
+                     ]%% -->
+                     <tr>
+                        <td align="center" valign="middle" style="padding: 0 0 25px 0;">
+                            <table role="presentation" border="0"   cellpadding="0" cellspacing="0">
+                                       <tr>
+                                          <td class="darkmodeText fallback-font-didot" align="left"><a href="%%=RedirectTo(@footerLogoLinkURL)=%%" target="_blank" alias="%%=v(@footerLogoAlias)=%%"style="text-decoration: none; color:%%=v(@textColor)=%%;"><img src="%%=v(@footerLogoImageURL)=%%" alt="DY" width="76" style="display:block; font-family: 'didot', 'times new roman', 'serif'; 72px; font-weight:bold;" class="fallback-font-didot darkmodeText" border="0" /></a></td>
+                                       </tr>
+                                    </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td height="100" align="center" valign="middle" style="padding: 0 0 20px 0;">
+                           <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="display: inline;">
+                                <tr>
+                                    <td align="left" class="darkmodeText proxima-nova-fallback-font" style="padding: 0 20px 0; font-family: 'proxima-nova', 'Verdana', 'sans-serif'; font-size: 24px; line-height: 34px; color: %%=v(@textColor)=%%; mso-line-height-rule: exactly;"><a href="%%=RedirectTo(@womenLinkURL)=%%"  target="_blank" alias="%%=v(@womenAlias)=%%" style="color: %%=v(@textColor)=%%;">%%=v(@womenText)=%%</a></td>
+                               
+                                    <td align="left" class="darkmodeText proxima-nova-fallback-font" style="padding: 0 20px 0; font-family: 'proxima-nova', 'Verdana', 'sans-serif'; font-size: 24px; line-height: 34px; color: %%=v(@textColor)=%%; mso-line-height-rule: exactly;"><a href="%%=RedirectTo(@menLinkURL)=%%"  target="_blank" alias="%%=v(@menAlias)=%%" style="color: %%=v(@textColor)=%%;">%%=v(@menText)=%%</a></td>
+                               
+                                    <td align="left" class="darkmodeText proxima-nova-fallback-font" style="padding: 0 20px 0; font-family: 'proxima-nova', 'Verdana', 'sans-serif'; font-size: 24px; line-height: 34px; color: %%=v(@textColor)=%%; mso-line-height-rule: exactly;"><a href="%%=RedirectTo(@weddingLinkURL)=%%"  target="_blank" alias="%%=v(@weddingAlias)=%%" style="color: %%=v(@textColor)=%%;">%%=v(@weddingText)=%%</a></td>
+                               
+                                    <td align="left" class="darkmodeText proxima-nova-fallback-font" style="padding: 0 20px 0; font-family: 'proxima-nova', 'Verdana', 'sans-serif'; font-size: 24px; line-height: 34px; color: %%=v(@textColor)=%%; mso-line-height-rule: exactly;"><a href="%%=RedirectTo(@storeLocatorLinkURL)=%%"  target="_blank" alias="%%=v(@storeLocatorAlias)=%%" style="color: %%=v(@textColor)=%%;">%%=v(@storeLocatorText)=%%</a></td>
+                                </tr>
+                           </table>
+                        </td>
+                     </tr>
+                     <!-- %%[ ENDIF ]%% --> 
+                     <!-- END Footer Category Links --> 
+                     
+                     <!-- BEGIN Social Icons -->
+                     <tr>
+                        <td align="center" style="padding: 0 0 70px 0;">
+                           <table role="presentation" border="0"   cellpadding="0" cellspacing="0">
+                              <tr align="left">
+                                 <td class="pr-40 darkmodeText fallback-font-proxima-nova" style="padding: 0 54px 0 0;"> <a href="%%=RedirectTo(@instagramURL)=%%" target="_blank" alias="%%=v(@instagramAlias)=%%" style="text-decoration:none;"><img src="%%=v(@footerInstagramImageURL)=%%" alt="Instagram" width="34" height="34" style="display:block; font-size:9px; color:%%=v(@textColor)=%%; padding: 0;" /></a> </td>
+                                 <td class="pr-40 darkmodeText" style="padding: 0 54px 0 0;"> <a href="%%=RedirectTo(@facebookURL)=%%" target="_blank" alias="%%=v(@facebookAlias)=%%" style="text-decoration:none; color:%%=v(@textColor)=%%;"><img src="%%=v(@footerFacebookImageURL)=%%" alt="Facebook" width="34" height="34" style="display:block; font-family: 'proxima-nova', 'Verdana', 'sans-serif'; font-size:9px; color:%%=v(@textColor)=%%;" /></a> </td>
+                                 <td class="pr-40 darkmodeText fallback-font-proxima-nova" style="padding: 0 54px 0 0;"> <a href="%%=RedirectTo(@pinterestURL)=%%" target="_blank" alias="%%=v(@pinterestAlias)=%%" style="text-decoration:none; color:%%=v(@textColor)=%%;"><img src="%%=v(@footerPinterestImageURL)=%%" alt="Pinterest" width="34" height="34" style="display:block; font-family: 'proxima-nova', 'Verdana', 'sans-serif'; font-size:9px; color:%%=v(@textColor)=%%; padding: 0;" /></a> </td>
+                                 <td class="pr-40 darkmodeText fallback-font-proxima-nova" style="padding: 0 54px 0 0;"> <a href="%%=RedirectTo(@twitterURL)=%%" target="_blank" alias="%%=v(@twitterAlias)=%%" style="text-decoration:none; color: %%=v(@textColor)=%%;"><img src="%%=v(@footerTwitterImageURL)=%%" alt="Twitter" width="34" height="29" style="display:block; font-family: 'proxima-nova', 'Verdana', 'sans-serif'; font-size:9px; color:%%=v(@textColor)=%%; padding: 0;" /></a> </td>
+                                 <td class="darkmodeText fallback-font-proxima-nova"> <a href="%%=RedirectTo(@youtubeURL)=%%" target="_blank" alias="%%=v(@youTubeAlias)=%%" style="text-decoration:none; color:%%=v(@textColor)=%%;"><img src="%%=v(@footerYouTubeImageURL)=%%" alt="YouTube" width="34" height="24" style="display:block; font-family: 'proxima-nova', 'Verdana', 'sans-serif'; font-size:9px; color:%%=v(@textColor)=%%; padding: 0;" /></a> </td>
+                              </tr>
+                           </table>
+                        </td>
+                     </tr>
+                     <!-- END Social Icons --> 
+                     
+                     <!-- BEGIN Disclaimer --> 
+                     %%[ IF (@hideDisclaimer != "Y" AND @emailType == "transactional") OR (@hideDisclaimer == "N" AND @emailType != "Transactional") THEN ]%%
+                     <tr>
+                        <td align="center" style="padding: 0 0 0 0">
+                           <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+                              <tr>
+                                 <td class="darkmodeText fallback-font-proxima-nova" align="center" style="padding: 0 0 0 0; font-family: 'proxima-nova', 'Verdana', 'sans-serif'; font-size: 20px; line-height: 26px; color: %%=v(@textColor)=%%;"> %%=v(@generalDisclaimerText1)=%% <a href="%%=RedirectTo(@generalDisclaimerText2LinkURL)=%%" class="darkmodeText" target="_blank" alias="%%=v(@generalDisclaimerText2Alias)=%%" style="text-decoration: underline; color: %%=v(@textColor)=%%;">%%=v(@generalDisclaimerText2)=%%</a> %%=v(@generalDisclaimerText3)=%% <a href="%%=RedirectTo(@generalDisclaimerText4LinkURL)=%%" class="darkmodeText" target="_blank" alias="%%=v(@generalDisclaimerText4Alias)=%%" style="text-decoration: underline; color: %%=v(@textColor)=%%;" >%%=v(@generalDisclaimerText4)=%%</a>. </td>
+                              </tr>
+                           </table>
+                        </td>
+                     </tr>
+                     %%[ ENDIF ]%% 
+                     <!-- END Default Disclaimer --> 
+                     
+                     <!-- BEGIN Additional Disclaimer --> 
+                     <!-- %%[ 
+                            IF NOT Empty(@additionalDisclaimer) THEN 
+                            ]%% -->
+                     <tr>
+                        <td align="center" style="padding: 0 0 0 0">
+                           <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+                              <tr>
+                                 <td class="darkmodeText fallback-font-proxima-nova" align="left" style="padding: 0 0 0 0; font-family: 'proxima-nova', 'Verdana', 'sans-serif'; font-size: 20px; line-height: 26px; color: %%=v(@textColor)=%%;"> 
+                                    <!-- Add space if the default disclaimer is shown --> 
+                                    <!-- %%[ IF (@emailType == "transactional" AND @hideDisclaimer != "Y" ) OR (@emailType != "transactional" AND @hideDisclaimer != "N") THEN ]%% --> 
+                                    <br/>
+                                    <br/>
+                                    <!-- %%[ ENDIF ]%% --> 
+                                    %%=TreatAsContent(@additionalDisclaimer)=%% </td>
+                              </tr>
+                           </table>
+                        </td>
+                     </tr>
+                     <!-- %%[ ENDIF ]%% --> 
+                     <!-- END Additional Disclaimer --> 
+                     
+                     <!-- %%[ 
+                            IF ((@hideDisclaimer != "Y" AND @emailType == "transactional") OR (@hideDisclaimer == "N" AND @emailType != "Transactional")) OR NOT Empty(@additionalDisclaimer) THEN
+                            ]%% -->
+                     <tr>
+                        <td align="center" style="padding: 0 0 25px 0; line-height: 1px; mso-line-height-rule: exactly;">&nbsp; </td>
+                     </tr>
+                     <!-- %%[ ENDIF ]%% --> 
+                     
+                     <!-- BEGIN Company Address -->
+                     <tr>
+                        <td align="center" style="padding: 0 0 0 0;">
+                           <table role="presentation" width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                              <tr>
+                                 <td class="darkmodeText fallback-font-proxima-nova" align="center" style="padding: 0 0 0 0; font-family: 'proxima-nova', 'Verdana', 'sans-serif'; font-size: 20px; line-height: 26px; color: %%=v(@textColor)=%%;"> &copy; %%xtyear%% %%=TreatAsContent(@copyrightText)=%%<br/>
+                                    %%=TreatAsContent(@companyAddressText)=%% </td>
+                              </tr>
+                           </table>
+                        </td>
+                     </tr>
+                     <!-- END Company Address --> 
+
+
+                     <!-- BEGIN Footer Links --> 
+                     <!-- %%[ 
+                     IF (@hideFooterLinks != "Y" AND (@emailType == "journey" OR @emailType == "marketing" OR @emailType == "trigger" OR Empty(@emailType))) OR (@hideFooterLinks == "N" AND @emailType == "Transactional") THEN 
+                     ]%% -->
+                     <tr>
+                        <td height="100" align="center" valign="middle" style="padding: 0 0 25px 0;">
+                           <table border="0" cellpadding="0" cellspacing="0">
+                              <tr>
+                                 <td align="left" valign="top" class="darkmodeText proxima-nova-fallback-font" style="padding: 0 20px; font-family: 'proxima-nova', 'Verdana', 'sans-serif'; font-size: 20px; line-height: 28px; color: %%=v(@textColor)=%%;"><a href="%%=RedirectTo(@privacyPolicyLinkURL)=%%" class="darkmodeText" target="_blank" alias="%%=v(@privacyPolicyAlias)=%%" style="text-decoration: underline; color: %%=v(@textColor)=%%;">%%=v(@privacyPolicyText)=%%</a></td>
+                                 <td align="left" valign="top" class="darkmodeText proxima-nova-fallback-font" style="padding: 0 20px; font-family: 'proxima-nova', 'Verdana', 'sans-serif'; font-size: 20px; line-height: 28px; color: %%=v(@textColor)=%%;"><a href="%%=RedirectTo(@termsAndConditionsLinkURL)=%%" class="darkmodeText" target="_blank" alias="%%=v(@termsAndConditionsAlias)=%%" style="text-decoration: underline; color: %%=v(@textColor)=%%;">%%=v(@termsAndConditionsText)=%%</a></td>
+                                 <td align="left" valign="top" class="darkmodeText proxima-nova-fallback-font" style="padding: 0 20px; font-family: 'proxima-nova', 'Verdana', 'sans-serif'; font-size: 20px; line-height: 28px; color: %%=v(@textColor)=%%;"><a href="%%=RedirectTo(TreatASContent(profile_center_url))=%%" class="darkmodeText" target="_blank" alias="%%=v(@unsubscribeAlias)=%%" style="text-decoration: underline; color: %%=v(@textColor)=%%;">%%=v(@unsubscribeText)=%%</a></td>
+                              </tr>
+                           </table>
+                        </td>
+                     </tr>
+                     <!-- %%[ ENDIF ]%% --> 
+                     <!-- END Footer Links --> 
+                     
+                     <!-- BEGIN Footer Logo -->
+                     <!-- %%[ /* Show DY footer logo here when category links are not displayed */
+                     IF @footerLogoDisplayed != "Y" THEN ]%% -->
+                     <tr>
+                        <td align="left" style="padding: 70px 0;">
+                           <table role="presentation" border="0"   cellpadding="0" cellspacing="0">
+                              <tr>
+                                 <td class="darkmodeText fallback-font-didot" align="left"><a href="%%=RedirectTo(@footerLogoLinkURL)=%%" target="_blank" alias="%%=v(@footerLogoAlias)=%%"style="text-decoration: none; color:%%=v(@textColor)=%%;"><img src="%%=v(@footerLogoImageURL)=%%" alt="DY" width="76" style="display:block; font-family: 'didot', 'times new roman', 'serif'; 72px; font-weight:bold;" class="fallback-font-didot darkmodeText" border="0" /> </a> </td>
+                              </tr>
+                           </table>
+                        </td>
+                     </tr>
+                     %%[ ENDIF ]%%
+                     <!-- END Footer Logo -->  
+                     
+                     <!-- BEGIN DEV email message/PROD VAWP Link --> 
+                     <!-- %%[ IF memberid == "534001459" AND NOT Empty(@isDevMessage) THEN ]%% -->
+                     <tr>
+                        <td align="left" style="font-family: 'proxima-nova', 'arial', 'sans-serif'; padding: 25px 0 0 0; color: red;">%%=v(@isDevMessage)=%%<br/>
+                           <a href="%%view_email_url%%" target="_blank" style="color: red; text-decoration: underline;">VAWP</a> <br/>
+                           <br/>
+                        </td>
+                     </tr>
+                     <!-- %%[ ELSEIF @displayVAWP == "Y" THEN ]%% -->
+                     <tr>
+                        <td align="left" style="font-family: 'proxima-nova', 'arial', 'sans-serif'; padding: 25px 0 0 0; color: red"> <a href="%%view_email_url%%" target="_blank" style="color: red; text-decoration: underline;">VAWP</a> <br/>
+                           <br/>
+                        </td>
+                     </tr>
+                     <!-- %%[ ENDIF ]%% --> 
+                     <!-- END DEV email message/PROD VAWP Link -->
+                     
+                  </table>
+                  <!-- END Footer --> 
+               </td>
+            </tr>
+         </table>
+         <!-- END Main Table --> 
+      </td>
+   </tr>
+</table>
+<!-- END Centering Table -->
+</body>
+</html>
